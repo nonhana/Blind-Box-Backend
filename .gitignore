@@ -1,0 +1,9 @@
+# 环境相关
+.env
+# 依赖相关
+node_modules
+package-lock.json
+# 编译产出
+dist
+# 公共资源
+public
