@@ -4,84 +4,107 @@ import {
   queryPromise,
   unifiedResponseBody,
   errorHandler,
-  randomCode,
-  sendCode,
 } from "../utils/index";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-
 dotenv.config();
 
-let sendCodeP: { phonenumber: any; code: any }[] = [];
-//倒计时
-function setTime(phonenumber: any, code: any) {
-  sendCodeP.push({
-    phonenumber: phonenumber,
-    code: code,
-  });
-  let i = 0;
-  let timer = setInterval(() => {
-    i += 1;
-    console.log(i);
-    if (i == 120) {
-      const index = sendCodeP.findIndex((e) => {
-        return e.phonenumber == phonenumber;
-      });
-      sendCodeP.splice(index, 1);
-      clearInterval(timer);
-    }
-  }, 1000);
-}
-
 class UsersController {
-  // 发送手机验证码函数
-  sendMobileCode = (req: Request, res: Response) => {
-    const { phonenumber } = req.query;
-    console.log(phonenumber);
+  // 登录函数
+  userLogin = async (req: Request, res: Response) => {
+    const { phonenumber, password } = req.body;
     try {
-      if (phonenumber !== undefined) {
-        const index = sendCodeP.findIndex((e) => {
-          return e.phonenumber === phonenumber;
-        });
-        if (index !== -1) {
-          unifiedResponseBody({
-            result_code: 1,
-            result_msg: "已经发送过",
-            res,
-          });
-        } else {
-          let code = randomCode(4);
-          sendCode(<string>phonenumber, Number(code), function () {
-            setTime(phonenumber, code);
-            unifiedResponseBody({
-              result_code: 0,
-              result_msg: "短信验证码发送成功",
-              res,
-            });
-          });
-        }
-      } else {
+      // 1. 检查手机号是否已经注册
+      const retrieveRes = await queryPromise(
+        "SELECT * FROM users WHERE user_phonenumber = ?",
+        phonenumber
+      );
+      if (retrieveRes.length === 0) {
         unifiedResponseBody({
           result_code: 1,
-          result_msg: "手机号码不能为空",
+          result_msg: "该手机号尚未注册",
           res,
         });
+        return;
       }
+      // 2. 检查密码是否正确
+      const { password: hash } = retrieveRes[0];
+      if (!bcrypt.compareSync(password, hash)) {
+        unifiedResponseBody({
+          result_code: 1,
+          result_msg: "密码错误",
+          res,
+        });
+        return;
+      }
+      (() => {
+        // 3. 生成token
+        const { password, createdAt, updatedAt, ...restUserInfo } =
+          retrieveRes[0];
+        const token = jwt.sign(restUserInfo, process.env.JWT_SECRET!, {
+          expiresIn: "1h",
+        });
+        // 4. 返回结果
+        unifiedResponseBody({
+          result_code: 0,
+          result_msg: "登录成功",
+          result: { token },
+          res,
+        });
+      })();
     } catch (error) {
       errorHandler({
         error,
-        result_msg: "短信验证码发送失败",
+        result_msg: "登录失败",
+        result: { error },
         res,
       });
     }
   };
 
-  // 登录函数
-  userLogin = (req: Request, res: Response) => {};
-
   // 注册函数
-  userRegister = (req: Request, res: Response) => {};
+  userRegister = async (req: Request, res: Response) => {
+    const { phonenumber, password } = req.body;
+    try {
+      // 1. 检查手机号是否已经注册
+      const retrieveRes = await queryPromise(
+        "SELECT * FROM users WHERE user_phonenumber = ?",
+        phonenumber
+      );
+      if (retrieveRes.length !== 0) {
+        unifiedResponseBody({
+          result_code: 1,
+          result_msg: "该手机号已注册",
+          res,
+        });
+        return;
+      }
+      // 2. 将密码加密
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(password, salt);
+
+      // 3. 将用户信息存入数据库
+      await queryPromise("INSERT INTO users SET ?", {
+        user_phonenumber: phonenumber,
+        password: hash,
+      });
+
+      // 4. 返回结果
+      unifiedResponseBody({
+        result_code: 0,
+        result_msg: "注册成功",
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "注册失败",
+        result: { error },
+        res,
+      });
+    }
+  };
 
   // 更新用户信息
   updateUserInfo = async (req: AuthenticatedRequest, res: Response) => {
@@ -111,9 +134,8 @@ class UsersController {
 
   // 获取用户信息
   getUserInfo = async (req: AuthenticatedRequest, res: Response) => {
-    // 如果有传来 user_id，就获取该用户的信息
-    // 否则，就获取当前登录用户的信息
-    let user_id = 0;
+    // 如果有传来 user_id，就获取该用户的信息；否则，就获取当前登录用户的信息
+    let user_id: number;
     if (req.query.user_id) {
       user_id = Number(req.query.user_id);
     } else {
@@ -132,14 +154,18 @@ class UsersController {
         await queryPromise("SELECT * FROM users WHERE user_id = ?", user_id)
       )[0];
       // 将university_id转换为university_name
-      userInfo.university = (
-        await queryPromise(
-          "SELECT university_name FROM universities WHERE university_id = ?",
-          university_id
-        )
-      )[0].university_name;
-      // gender转为中文
-      userInfo.gender = gender === 1 ? "男" : "女";
+      if (university_id) {
+        userInfo.university = (
+          await queryPromise(
+            "SELECT university_name FROM universities WHERE university_id = ?",
+            university_id
+          )
+        )[0].university_name;
+      } else {
+        userInfo.university = null;
+      }
+      // gender转为男/女
+      userInfo.gender = gender === 0 ? "男" : "女";
 
       unifiedResponseBody({
         result_code: 0,

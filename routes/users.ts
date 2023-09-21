@@ -64,8 +64,7 @@ const BackgroundUpload = multer({
 
 const router = express.Router();
 
-router.get("/send-mobile-code", apiRecord, usersController.sendMobileCode);
-router.get("/login", apiRecord, usersController.userLogin);
+router.post("/login", apiRecord, usersController.userLogin);
 router.post("/register", apiRecord, usersController.userRegister);
 router.post(
   "/update-user-info",
