@@ -4,16 +4,49 @@ import {
   queryPromise,
   unifiedResponseBody,
   errorHandler,
+  randomCode,
 } from "../utils/index";
-import bcrypt from "bcryptjs";
+import { sendLoginCroeCode } from "../utils/messageSender";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config();
 
 class UsersController {
+  // 用于存储验证码
+  code: string;
+  constructor() {
+    this.code = "";
+  }
+
+  // 发送验证码
+  sendCode = async (req: Request, res: Response) => {
+    const { phonenumber } = req.body;
+    try {
+      // 生成验证码
+      const verCode = randomCode(6);
+      this.code = verCode;
+      // 发送验证码
+      await sendLoginCroeCode(phonenumber, verCode);
+      // 返回结果
+      unifiedResponseBody({
+        result_code: 0,
+        result_msg: "发送验证码成功",
+        result: verCode,
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "发送验证码失败",
+        result: { error },
+        res,
+      });
+    }
+  };
+
   // 登录函数
   userLogin = async (req: Request, res: Response) => {
-    const { phonenumber, password } = req.body;
+    const { phonenumber, code } = req.body;
     try {
       // 1. 检查手机号是否已经注册
       const retrieveRes = await queryPromise(
@@ -28,17 +61,24 @@ class UsersController {
         });
         return;
       }
-      // 2. 检查密码是否正确
-      const { password: hash } = retrieveRes[0];
-      if (!bcrypt.compareSync(password, hash)) {
+      // 2. 检查验证码是否正确
+      if (this.code === "") {
+        console.log(this.code, code);
         unifiedResponseBody({
           result_code: 1,
-          result_msg: "密码错误",
+          result_msg: "请先获取验证码",
           res,
         });
         return;
-      }
-      (() => {
+      } else if (this.code !== code) {
+        unifiedResponseBody({
+          result_code: 1,
+          result_msg: "验证码错误",
+          res,
+        });
+        return;
+      } else {
+        this.code = "";
         // 3. 生成token
         const { password, createdAt, updatedAt, ...restUserInfo } =
           retrieveRes[0];
@@ -52,7 +92,7 @@ class UsersController {
           result: { token },
           res,
         });
-      })();
+      }
     } catch (error) {
       errorHandler({
         error,
@@ -65,9 +105,9 @@ class UsersController {
 
   // 注册函数
   userRegister = async (req: Request, res: Response) => {
-    const { phonenumber, password } = req.body;
+    const { phonenumber, code } = req.body;
     try {
-      // 1. 检查手机号是否已经注册
+      // 检查手机号是否已经注册
       const retrieveRes = await queryPromise(
         "SELECT * FROM users WHERE user_phonenumber = ?",
         phonenumber
@@ -80,22 +120,33 @@ class UsersController {
         });
         return;
       }
-      // 2. 将密码加密
-      const salt = bcrypt.genSaltSync(10);
-      const hash = bcrypt.hashSync(password, salt);
-
-      // 3. 将用户信息存入数据库
-      await queryPromise("INSERT INTO users SET ?", {
-        user_phonenumber: phonenumber,
-        password: hash,
-      });
-
-      // 4. 返回结果
-      unifiedResponseBody({
-        result_code: 0,
-        result_msg: "注册成功",
-        res,
-      });
+      if (this.code === "") {
+        unifiedResponseBody({
+          result_code: 1,
+          result_msg: "请先获取验证码",
+          res,
+        });
+        return;
+      } else if (this.code !== code) {
+        unifiedResponseBody({
+          result_code: 1,
+          result_msg: "验证码错误",
+          res,
+        });
+        return;
+      } else {
+        this.code = "";
+        // 将用户信息存入数据库
+        await queryPromise("INSERT INTO users SET ?", {
+          user_phonenumber: phonenumber,
+        });
+        // 返回结果
+        unifiedResponseBody({
+          result_code: 0,
+          result_msg: "注册成功",
+          res,
+        });
+      }
     } catch (error) {
       errorHandler({
         error,
