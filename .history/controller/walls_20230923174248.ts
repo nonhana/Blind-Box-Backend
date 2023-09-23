@@ -34,13 +34,13 @@ class WallsController {
   bindUser = async (req: Request, res: Response) => {
     const { wall_id, user_id } = req.body
     try {
-      await queryPromise("INSERT INTO wall-users (wall_id, user_id, times) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE times = times + 1", {
+      await queryPromise("INSERT INTO wall-users (wall_id, user_id, times) VALUES (?, 1) ON DUPLICATE KEY UPDATE times = times + 1;", {
         wall_id, user_id
       })
       unifiedResponseBody(
         {
           result_code: 0,
-          result_msg: "绑定消费关系成功",
+          result_msg: "获取表白墙列表成功",
           result: {},
           res,
         }
@@ -48,7 +48,7 @@ class WallsController {
     } catch (error) {
       errorHandler({
         error,
-        result_msg: "绑定消费关系失败",
+        result_msg: "获取表白墙列表失败",
         result: { error },
         res,
       });

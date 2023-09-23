@@ -8,6 +8,7 @@ const db = mysql.createPool({
 
 // 判断连接是否成功并打印连接信息
 db.getConnection((err, _) => {
+  // console.log(dbConfig)
   if (err) {
     console.log("连接失败");
   } else {

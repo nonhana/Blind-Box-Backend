@@ -78,10 +78,10 @@ class UsersController {
   };
 
   // 登录函数
-  userLogin = (req: Request, res: Response) => { };
+  userLogin = (req: Request, res: Response) => {};
 
   // 注册函数
-  userRegister = (req: Request, res: Response) => { };
+  userRegister = (req: Request, res: Response) => {};
 
   // 更新用户信息
   updateUserInfo = async (req: AuthenticatedRequest, res: Response) => {
@@ -152,7 +152,7 @@ class UsersController {
         error,
         result_msg: "获取用户信息失败",
         result: {
-          error
+          error,
         },
         res,
       });

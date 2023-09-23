@@ -152,7 +152,7 @@ class UsersController {
         error,
         result_msg: "获取用户信息失败",
         result: {
-          error
+          error,
         },
         res,
       });

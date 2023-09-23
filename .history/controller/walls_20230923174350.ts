@@ -34,7 +34,7 @@ class WallsController {
   bindUser = async (req: Request, res: Response) => {
     const { wall_id, user_id } = req.body
     try {
-      await queryPromise("INSERT INTO wall-users (wall_id, user_id, times) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE times = times + 1", {
+      await queryPromise("INSERT INTO wall-users (wall_id, user_id, times) VALUES (?, 1) ON DUPLICATE KEY UPDATE times = times + 1;", {
         wall_id, user_id
       })
       unifiedResponseBody(
