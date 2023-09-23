@@ -13,25 +13,33 @@ dotenv.config();
 
 class UsersController {
   // 用于存储验证码
-  code: string;
+  codes: Record<string, string>;
   constructor() {
-    this.code = "";
+    this.codes = {};
   }
+
+  // 生成验证码并放入计时器中，5分钟后清空验证码
+  generateCode = (phonenumber: string) => {
+    const code = randomCode(6);
+    this.codes[phonenumber] = code;
+    setTimeout(() => {
+      delete this.codes[phonenumber];
+    }, 5 * 60 * 1000);
+    return code;
+  };
 
   // 发送验证码
   sendCode = async (req: Request, res: Response) => {
     const { phonenumber } = req.body;
     try {
       // 生成验证码
-      const verCode = randomCode(6);
-      this.code = verCode;
+      const code = this.generateCode(phonenumber);
       // 发送验证码
-      await sendLoginCroeCode(phonenumber, verCode);
+      await sendLoginCroeCode(phonenumber, code);
       // 返回结果
       unifiedResponseBody({
         result_code: 0,
         result_msg: "发送验证码成功",
-        result: verCode,
         res,
       });
     } catch (error) {
@@ -62,15 +70,14 @@ class UsersController {
         return;
       }
       // 2. 检查验证码是否正确
-      if (this.code === "") {
-        console.log(this.code, code);
+      if (this.codes[phonenumber]) {
         unifiedResponseBody({
           result_code: 1,
-          result_msg: "请先获取验证码",
+          result_msg: "验证码未获取或验证码已过期",
           res,
         });
         return;
-      } else if (this.code !== code) {
+      } else if (this.codes[phonenumber] !== code) {
         unifiedResponseBody({
           result_code: 1,
           result_msg: "验证码错误",
@@ -78,7 +85,7 @@ class UsersController {
         });
         return;
       } else {
-        this.code = "";
+        delete this.codes[phonenumber];
         // 3. 生成token
         const { password, createdAt, updatedAt, ...restUserInfo } =
           retrieveRes[0];
@@ -120,14 +127,14 @@ class UsersController {
         });
         return;
       }
-      if (this.code === "") {
+      if (this.codes[phonenumber]) {
         unifiedResponseBody({
           result_code: 1,
-          result_msg: "请先获取验证码",
+          result_msg: "验证码未获取或验证码已过期",
           res,
         });
         return;
-      } else if (this.code !== code) {
+      } else if (this.codes[phonenumber] !== code) {
         unifiedResponseBody({
           result_code: 1,
           result_msg: "验证码错误",
@@ -135,7 +142,7 @@ class UsersController {
         });
         return;
       } else {
-        this.code = "";
+        delete this.codes[phonenumber];
         // 将用户信息存入数据库
         await queryPromise("INSERT INTO users SET ?", {
           user_phonenumber: phonenumber,

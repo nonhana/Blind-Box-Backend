@@ -1,5 +1,4 @@
 // 发短信功能模块的封装：
-// import SMSClient from "@alicloud/sms-sdk"; //用户调用阿里短信平台的框架
 var SMSClient = require("@alicloud/sms-sdk"); //用户调用阿里短信平台的框架
 import dotenv from "dotenv";
 dotenv.config();
@@ -24,8 +23,6 @@ export const sendLoginCroeCode = async (phone: string, verCode: string) => {
       TemplateCode: process.env.TEMPLATE_CODE!,
       TemplateParam: JSON.stringify({ code: verCode }),
     };
-
-    console.info("验证码是->", verCode, "options:", dataToSend); //
 
     //调用smsClient实例的方法：sendSMS，发送验证码
     const res = await smsClient.sendSMS(dataToSend);
