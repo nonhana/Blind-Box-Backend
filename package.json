@@ -9,6 +9,7 @@
     "build": "npm run ts-build && npm run copy-static"
   },
   "dependencies": {
+    "@alicloud/sms-sdk": "^1.1.6",
     "axios": "^1.4.0",
     "bcryptjs": "^2.4.3",
     "blueimp-md5": "^2.19.0",
