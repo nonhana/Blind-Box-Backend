@@ -10,7 +10,7 @@ class WallsController {
   addWall = async (req: Request, res: Response) => {
     const { wall_name, university_id } = req.body;
     try {
-      await queryPromise("INSERT INTO `confession-walls` SET ?", {
+      await queryPromise("INSERT INTO confession-walls SET ?", {
         wall_name,
         university_id,
       });
@@ -34,7 +34,7 @@ class WallsController {
   bindUser = async (req: Request, res: Response) => {
     const { wall_id, user_id } = req.body
     try {
-      await queryPromise("INSERT INTO `wall-users` (wall_id, user_id, times) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE times = times + 1", {
+      await queryPromise("INSERT INTO wall-users (wall_id, user_id, times) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE times = times + 1", {
         wall_id, user_id
       })
       unifiedResponseBody(
@@ -84,7 +84,7 @@ class WallsController {
   getWallInfo = async (req: Request, res: Response) => {
     const { wall_id } = req.body
     try {
-      const result = await queryPromise("SELECT * FROM `confession-walls` WHERE wall_id = ?", {
+      const result = await queryPromise("SELECT * FROM confession-walls WHERE wall_id = ?", {
         wall_id
       })
       unifiedResponseBody(
