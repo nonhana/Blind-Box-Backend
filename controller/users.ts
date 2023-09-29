@@ -19,23 +19,23 @@ class UsersController {
   }
 
   // 生成验证码并放入计时器中，5分钟后清空验证码
-  generateCode = (phonenumber: string) => {
+  generateCode = (phoneNumber: string) => {
     const code = randomCode(6);
-    this.codes[phonenumber] = code;
+    this.codes[phoneNumber] = code;
     setTimeout(() => {
-      delete this.codes[phonenumber];
+      delete this.codes[phoneNumber];
     }, 5 * 60 * 1000);
     return code;
   };
 
   // 发送验证码
   sendCode = async (req: Request, res: Response) => {
-    const { phonenumber } = req.body;
+    const { phoneNumber } = req.body;
     try {
       // 生成验证码
-      const code = this.generateCode(phonenumber);
+      const code = this.generateCode(phoneNumber);
       // 发送验证码
-      await sendLoginCroeCode(phonenumber, code);
+      await sendLoginCroeCode(phoneNumber, code);
       // 返回结果
       unifiedResponseBody({
         result_code: 0,
@@ -54,12 +54,12 @@ class UsersController {
 
   // 登录函数
   userLogin = async (req: Request, res: Response) => {
-    const { phonenumber, code } = req.body;
+    const { phoneNumber, code } = req.body;
     try {
       // 1. 检查手机号是否已经注册
       const retrieveRes = await queryPromise(
-        "SELECT * FROM users WHERE user_phonenumber = ?",
-        phonenumber
+        "SELECT * FROM users WHERE user_phoneNumber = ?",
+        phoneNumber
       );
       if (retrieveRes.length === 0) {
         unifiedResponseBody({
@@ -70,14 +70,14 @@ class UsersController {
         return;
       }
       // 2. 检查验证码是否正确
-      if (this.codes[phonenumber]) {
+      if (this.codes[phoneNumber]) {
         unifiedResponseBody({
           result_code: 1,
           result_msg: "验证码未获取或验证码已过期",
           res,
         });
         return;
-      } else if (this.codes[phonenumber] !== code) {
+      } else if (this.codes[phoneNumber] !== code) {
         unifiedResponseBody({
           result_code: 1,
           result_msg: "验证码错误",
@@ -85,7 +85,7 @@ class UsersController {
         });
         return;
       } else {
-        delete this.codes[phonenumber];
+        delete this.codes[phoneNumber];
         // 3. 生成token
         const { password, createdAt, updatedAt, ...restUserInfo } =
           retrieveRes[0];
@@ -112,12 +112,12 @@ class UsersController {
 
   // 注册函数
   userRegister = async (req: Request, res: Response) => {
-    const { phonenumber, code } = req.body;
+    const { phoneNumber, code } = req.body;
     try {
       // 检查手机号是否已经注册
       const retrieveRes = await queryPromise(
-        "SELECT * FROM users WHERE user_phonenumber = ?",
-        phonenumber
+        "SELECT * FROM users WHERE user_phoneNumber = ?",
+        phoneNumber
       );
       if (retrieveRes.length !== 0) {
         unifiedResponseBody({
@@ -127,14 +127,14 @@ class UsersController {
         });
         return;
       }
-      if (this.codes[phonenumber]) {
+      if (this.codes[phoneNumber]) {
         unifiedResponseBody({
           result_code: 1,
           result_msg: "验证码未获取或验证码已过期",
           res,
         });
         return;
-      } else if (this.codes[phonenumber] !== code) {
+      } else if (this.codes[phoneNumber] !== code) {
         unifiedResponseBody({
           result_code: 1,
           result_msg: "验证码错误",
@@ -142,10 +142,10 @@ class UsersController {
         });
         return;
       } else {
-        delete this.codes[phonenumber];
+        delete this.codes[phoneNumber];
         // 将用户信息存入数据库
         await queryPromise("INSERT INTO users SET ?", {
-          user_phonenumber: phonenumber,
+          user_phoneNumber: phoneNumber,
         });
         // 返回结果
         unifiedResponseBody({
@@ -236,7 +236,7 @@ class UsersController {
         error,
         result_msg: "获取用户信息失败",
         result: {
-          error
+          error,
         },
         res,
       });
