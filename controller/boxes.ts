@@ -121,6 +121,57 @@ class BoxesController {
     }
   };
 
+  // 获取所有盲盒列表
+  getBoxesList = async (req: Request, res: Response) => {
+    try {
+      // 获取盲盒列表
+      const boxes = await queryPromise(
+        "SELECT * FROM blind-boxes ORDER BY box_id DESC"
+      );
+      // 获取盲盒图片
+      const pictures = await Promise.all(
+        boxes.map(async (box: any) => {
+          const pictures = await queryPromise(
+            "SELECT picture_url FROM blind-box-pictures WHERE box_id = ?",
+            box.box_id
+          );
+          return pictures;
+        })
+      );
+      // 获取盲盒大学
+      const universities = await Promise.all(
+        boxes.map(async (box: any) => {
+          const universities = await queryPromise(
+            "SELECT university_name FROM universities-boxes WHERE box_id = ?",
+            box.box_id
+          );
+          return universities;
+        })
+      );
+      unifiedResponseBody({
+        result_code: 0,
+        result_msg: "获取盲盒列表成功",
+        result: boxes.map((box: any, index: number) => {
+          return {
+            ...box,
+            picture_list: pictures[index],
+            university_list: universities[index],
+          };
+        }),
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "获取盲盒列表失败",
+        result: {
+          error,
+        },
+        res,
+      });
+    }
+  };
+
   // 添加盲盒浏览记录
   addBoxRecord = async (req: AuthenticatedRequest, res: Response) => {
     const { box_id } = req.body;

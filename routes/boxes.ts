@@ -47,5 +47,6 @@ router.post(
 router.get("/get-random-box", apiRecord, auth, boxesController.getRandomBox);
 router.post("/add-box-record", apiRecord, auth, boxesController.addBoxRecord);
 router.get("/get-box-record", apiRecord, auth, boxesController.getBoxRecord);
+router.get("/get-boxes-list", apiRecord, auth, boxesController.getBoxesList);
 
 export default router;

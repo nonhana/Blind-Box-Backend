@@ -87,8 +87,7 @@ class UsersController {
       } else {
         delete this.codes[phoneNumber];
         // 3. 生成token
-        const { password, createdAt, updatedAt, ...restUserInfo } =
-          retrieveRes[0];
+        const { createdAt, updatedAt, ...restUserInfo } = retrieveRes[0];
         const token = jwt.sign(restUserInfo, process.env.JWT_SECRET!, {
           expiresIn: "1h",
         });
@@ -201,14 +200,7 @@ class UsersController {
     }
     try {
       // 去掉无关信息
-      const {
-        password,
-        createdAt,
-        updatedAt,
-        university_id,
-        gender,
-        ...userInfo
-      } = (
+      const { createdAt, updatedAt, university_id, gender, ...userInfo } = (
         await queryPromise("SELECT * FROM users WHERE user_id = ?", user_id)
       )[0];
       // 将university_id转换为university_name
