@@ -75,7 +75,7 @@ class UsersController {
         // 3. 生成token
         const { createdAt, updatedAt, ...restUserInfo } = retrieveRes[0];
         const token = jwt.sign(restUserInfo, process.env.JWT_SECRET!, {
-          expiresIn: "1h",
+          expiresIn: "1d",
         });
         // 4. 返回结果
         unifiedResponseBody({

@@ -22,12 +22,13 @@ class BoxesController {
   // 发布盲盒
   postBox = async (req: AuthenticatedRequest, res: Response) => {
     const { box_info, picture_list, university_list } = req.body;
-    const { user_id } = req.state?.userInfo;
+    const { user_id, gender } = req.state?.userInfo;
     try {
       // 添加盲盒
       const box = await queryPromise("INSERT INTO `blind-boxes` SET ?", {
         ...box_info,
         user_id,
+        user_gender: gender,
       });
       if (picture_list) {
         // 添加盲盒图片
@@ -64,6 +65,7 @@ class BoxesController {
 
   // 上传盲盒图片
   uploadPicture = async (req: Request, res: Response) => {
+    console.log(req.file);
     if (!req.file) {
       unifiedResponseBody({
         httpStatus: 400,

@@ -64,6 +64,38 @@ class OthersController {
     }
   };
 
+  // 根据id查大学名
+  getUniversityNameById = async (req: Request, res: Response) => {
+    const { university_id } = req.query;
+    try {
+      const result = await queryPromise(
+        "SELECT university_name FROM universities WHERE university_id = ?",
+        university_id
+      );
+      if (result.length === 0) {
+        unifiedResponseBody({
+          result_code: 1,
+          result_msg: "大学不存在",
+          res,
+        });
+        return;
+      }
+      unifiedResponseBody({
+        result_code: 0,
+        result_msg: "获取大学名成功",
+        result: result[0].university_name,
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "获取大学名失败",
+        result: { error },
+        res,
+      });
+    }
+  };
+
   // 删除某个大学
   deleteUniversity = async (req: Request, res: Response) => {
     const { university_id } = req.body;

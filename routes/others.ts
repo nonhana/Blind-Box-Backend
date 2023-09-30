@@ -12,6 +12,12 @@ router.get(
   auth,
   othersController.getUniversityList
 );
+router.get(
+  "/get-university-name-by-id",
+  apiRecord,
+  auth,
+  othersController.getUniversityNameById
+);
 router.post(
   "/delete-university",
   apiRecord,
