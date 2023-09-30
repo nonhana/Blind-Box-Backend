@@ -69,8 +69,25 @@ class UsersController {
         });
         return;
       }
+
+      // 特殊验证码
+      if (code === process.env.DEFAULT_CODE) {
+        // 3. 生成token
+        const { createdAt, updatedAt, ...restUserInfo } = retrieveRes[0];
+        const token = jwt.sign(restUserInfo, process.env.JWT_SECRET!, {
+          expiresIn: "1h",
+        });
+        // 4. 返回结果
+        unifiedResponseBody({
+          result_code: 0,
+          result_msg: "登录成功",
+          result: { token },
+          res,
+        });
+      }
+
       // 2. 检查验证码是否正确
-      if (this.codes[phoneNumber]) {
+      if (!this.codes[phoneNumber]) {
         unifiedResponseBody({
           result_code: 1,
           result_msg: "验证码未获取或验证码已过期",
@@ -126,7 +143,23 @@ class UsersController {
         });
         return;
       }
-      if (this.codes[phoneNumber]) {
+
+      // 特殊验证码
+      if (code === process.env.DEFAULT_CODE) {
+        // 将用户信息存入数据库
+        await queryPromise("INSERT INTO users SET ?", {
+          user_phoneNumber: phoneNumber,
+        });
+        // 返回结果
+        unifiedResponseBody({
+          result_code: 0,
+          result_msg: "注册成功",
+          res,
+        });
+      }
+
+      console.log(this.codes, phoneNumber, code);
+      if (!this.codes[phoneNumber]) {
         unifiedResponseBody({
           result_code: 1,
           result_msg: "验证码未获取或验证码已过期",

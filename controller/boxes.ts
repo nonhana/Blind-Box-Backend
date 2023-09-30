@@ -12,7 +12,7 @@ dotenv.config();
 // 辅助函数：随机抽取盲盒的id
 async function randomBoxId(): Promise<number> {
   // 1. 获取盲盒列表
-  const boxes = await queryPromise("SELECT box_id FROM blind-boxes");
+  const boxes = await queryPromise("SELECT box_id FROM `blind-boxes`");
   // 2. 随机抽取盲盒的id
   const randomIndex = Math.floor(Math.random() * boxes.length);
   return boxes[randomIndex].box_id;
@@ -25,20 +25,22 @@ class BoxesController {
     const { user_id } = req.state?.userInfo;
     try {
       // 添加盲盒
-      const box = await queryPromise("INSERT INTO blind-boxes SET ?", {
+      const box = await queryPromise("INSERT INTO `blind-boxes` SET ?", {
         ...box_info,
         user_id,
       });
-      // 添加盲盒图片
-      picture_list.forEach(async (picture: string) => {
-        await queryPromise("INSERT INTO blind-box-pictures SET ?", {
-          box_id: box.insertId,
-          picture_url: picture,
+      if (picture_list) {
+        // 添加盲盒图片
+        picture_list.forEach(async (picture: string) => {
+          await queryPromise("INSERT INTO `blind-box-pictures` SET ?", {
+            box_id: box.insertId,
+            picture_url: picture,
+          });
         });
-      });
+      }
       // 添加盲盒大学
       university_list.forEach(async (university_id: number) => {
-        await queryPromise("INSERT INTO universities-boxes SET ?", {
+        await queryPromise("INSERT INTO `universities-boxes` SET ?", {
           box_id: box.insertId,
           university_id,
         });
@@ -86,17 +88,17 @@ class BoxesController {
     try {
       // 获取盲盒信息
       const box = await queryPromise(
-        "SELECT * FROM blind-boxes WHERE box_id = ?",
+        "SELECT * FROM `blind-boxes` WHERE box_id = ?",
         box_id
       );
       // 获取盲盒图片
       const pictures = await queryPromise(
-        "SELECT picture_url FROM blind-box-pictures WHERE box_id = ?",
+        "SELECT picture_url FROM `blind-box-pictures` WHERE box_id = ?",
         box_id
       );
       // 获取盲盒大学
       const universities = await queryPromise(
-        "SELECT university_name FROM universities-boxes WHERE box_id = ?",
+        "SELECT university_id FROM `universities-boxes` WHERE box_id = ?",
         box_id
       );
       unifiedResponseBody({
@@ -122,17 +124,17 @@ class BoxesController {
   };
 
   // 获取所有盲盒列表
-  getBoxesList = async (req: Request, res: Response) => {
+  getBoxesList = async (_: Request, res: Response) => {
     try {
       // 获取盲盒列表
       const boxes = await queryPromise(
-        "SELECT * FROM blind-boxes ORDER BY box_id DESC"
+        "SELECT * FROM `blind-boxes` ORDER BY box_id DESC"
       );
       // 获取盲盒图片
       const pictures = await Promise.all(
         boxes.map(async (box: any) => {
           const pictures = await queryPromise(
-            "SELECT picture_url FROM blind-box-pictures WHERE box_id = ?",
+            "SELECT picture_url FROM `blind-box-pictures` WHERE box_id = ?",
             box.box_id
           );
           return pictures;
@@ -142,7 +144,7 @@ class BoxesController {
       const universities = await Promise.all(
         boxes.map(async (box: any) => {
           const universities = await queryPromise(
-            "SELECT university_name FROM universities-boxes WHERE box_id = ?",
+            "SELECT university_id FROM `universities-boxes` WHERE box_id = ?",
             box.box_id
           );
           return universities;
@@ -179,17 +181,17 @@ class BoxesController {
     try {
       // 先检查是否已经添加过盲盒浏览记录
       const boxRecord = await queryPromise(
-        "SELECT * FROM boxes-history WHERE box_id = ? AND user_id = ?",
+        "SELECT * FROM `boxes-history` WHERE box_id = ? AND user_id = ?",
         [box_id, user_id]
       );
       if (boxRecord.length) {
         // 如果已经添加过盲盒浏览记录，就更新盲盒浏览记录的时间
         await queryPromise(
-          "UPDATE boxes-history SET createdAt = CURRENT_TIMESTAMP WHERE box_id = ? AND user_id = ?",
+          "UPDATE `boxes-history` SET createdAt = CURRENT_TIMESTAMP WHERE box_id = ? AND user_id = ?",
           [box_id, user_id]
         );
       } else {
-        await queryPromise("INSERT INTO boxes-history SET ?", {
+        await queryPromise("INSERT INTO `boxes-history` SET ?", {
           box_id,
           user_id,
         });
@@ -216,14 +218,14 @@ class BoxesController {
     try {
       // 获取盲盒浏览记录
       const boxRecord = await queryPromise(
-        "SELECT * FROM boxes-history WHERE user_id = ? ORDER BY createdAt DESC",
+        "SELECT * FROM `boxes-history` WHERE user_id = ? ORDER BY createdAt DESC",
         user_id
       );
       // 获取盲盒信息
       const boxInfo = await Promise.all(
         boxRecord.map(async (record: any) => {
           const box = await queryPromise(
-            "SELECT * FROM blind-boxes WHERE box_id = ?",
+            "SELECT * FROM `blind-boxes` WHERE box_id = ?",
             record.box_id
           );
           return box[0];

@@ -35,6 +35,7 @@ export const sendLoginCroeCode = async (phone: string, verCode: string) => {
     }
     throw "短信发送失败!";
   } catch (error) {
-    throw "发送短信验证码失败,您的操作可能过于频繁,请稍微再试!";
+    // throw "发送短信验证码失败,您的操作可能过于频繁,请稍后再试!";
+    throw error;
   }
 };
