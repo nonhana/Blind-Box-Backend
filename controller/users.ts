@@ -84,6 +84,7 @@ class UsersController {
           result: { token },
           res,
         });
+        return;
       }
 
       // 2. 检查验证码是否正确
@@ -156,9 +157,9 @@ class UsersController {
           result_msg: "注册成功",
           res,
         });
+        return;
       }
 
-      console.log(this.codes, phoneNumber, code);
       if (!this.codes[phoneNumber]) {
         unifiedResponseBody({
           result_code: 1,
