@@ -250,6 +250,140 @@ class BoxesController {
       });
     }
   };
+
+  // 获取自己发布的盲盒列表
+  getOwnBoxes = async (req: AuthenticatedRequest, res: Response) => {
+    const { user_id } = req.state?.userInfo;
+    try {
+      // 获取盲盒列表
+      const boxes = await queryPromise(
+        "SELECT * FROM `blind-boxes` WHERE user_id = ? ORDER BY box_id DESC",
+        user_id
+      );
+      // 获取盲盒图片
+      const pictures = await Promise.all(
+        boxes.map(async (box: any) => {
+          const pictures = await queryPromise(
+            "SELECT picture_url FROM `blind-box-pictures` WHERE box_id = ?",
+            box.box_id
+          );
+          return pictures;
+        })
+      );
+      // 获取盲盒大学
+      const universities = await Promise.all(
+        boxes.map(async (box: any) => {
+          const universities = await queryPromise(
+            "SELECT university_id FROM `universities-boxes` WHERE box_id = ?",
+            box.box_id
+          );
+          return universities;
+        })
+      );
+      unifiedResponseBody({
+        result_code: 0,
+        result_msg: "获取盲盒列表成功",
+        result: boxes.map((box: any, index: number) => {
+          return {
+            ...box,
+            picture_list: pictures[index],
+            university_list: universities[index],
+          };
+        }),
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "获取盲盒列表失败",
+        result: {
+          error,
+        },
+        res,
+      });
+    }
+  };
+
+  // 编辑盲盒
+  editBox = async (req: AuthenticatedRequest, res: Response) => {
+    const { box_id, box_info, picture_list, university_list } = req.body;
+    try {
+      // 更新盲盒信息
+      await queryPromise("UPDATE `blind-boxes` SET ? WHERE box_id = ?", [
+        box_info,
+        box_id,
+      ]);
+      // 更新盲盒图片
+      if (picture_list) {
+        await queryPromise(
+          "DELETE FROM `blind-box-pictures` WHERE box_id = ?",
+          [box_id]
+        );
+        picture_list.forEach(async (picture: string) => {
+          await queryPromise("INSERT INTO `blind-box-pictures` SET ?", {
+            box_id,
+            picture_url: picture,
+          });
+        });
+      }
+      // 更新盲盒大学
+      await queryPromise(
+        "DELETE FROM `universities-boxes` WHERE box_id = ?",
+        box_id
+      );
+      university_list.forEach(async (university_id: number) => {
+        await queryPromise("INSERT INTO `universities-boxes` SET ?", {
+          box_id,
+          university_id,
+        });
+      });
+      unifiedResponseBody({
+        result_msg: "编辑盲盒成功",
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "编辑盲盒失败",
+        result: {
+          error,
+        },
+        res,
+      });
+    }
+  };
+
+  // 删除盲盒
+  deleteBox = async (req: AuthenticatedRequest, res: Response) => {
+    const { box_id } = req.body;
+    try {
+      // 删除盲盒
+      await queryPromise("DELETE FROM `blind-boxes` WHERE box_id = ?", box_id);
+      // 删除盲盒图片
+      await queryPromise(
+        "DELETE FROM `blind-box-pictures` WHERE box_id = ?",
+        box_id
+      );
+      // 删除盲盒大学
+      await queryPromise(
+        "DELETE FROM `universities-boxes` WHERE box_id = ?",
+        box_id
+      );
+      unifiedResponseBody({
+        result_msg: "删除盲盒成功",
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "删除盲盒失败",
+        result: {
+          error,
+        },
+        res,
+      });
+    }
+  };
 }
 
 export const boxesController = new BoxesController();
