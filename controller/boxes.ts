@@ -5,7 +5,7 @@ import {
   errorHandler,
 } from "../utils/index";
 import { AuthenticatedRequest } from "../middleware/user.middleware";
-
+// 使用dotenv模块读取.env文件
 import dotenv from "dotenv";
 dotenv.config();
 

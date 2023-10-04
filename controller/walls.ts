@@ -86,6 +86,7 @@ class WallsController {
   // 获取某表白墙信息
   getWallInfo = async (req: Request, res: Response) => {
     const { wall_id } = req.query;
+    console.log(wall_id);
     try {
       const result = await queryPromise(
         "SELECT * FROM `confession-walls` WHERE wall_id = ?",

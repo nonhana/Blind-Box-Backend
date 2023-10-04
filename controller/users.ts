@@ -202,8 +202,24 @@ class UsersController {
     const userInfo = req.body;
     const { user_id } = req.state!.userInfo;
     try {
+      // 搜索出所有的大学列表
+      const universities = await queryPromise("SELECT * FROM universities");
+      const insertObj = {
+        gender: userInfo.gender === "男" ? 0 : 1,
+        university_id: universities.find(
+          (university: { university_id: number; university_name: string }) =>
+            university.university_name === userInfo.university
+        ).university_id,
+        user_avatar: userInfo.user_avatar,
+        user_background_img: userInfo.user_background_img,
+        user_email: userInfo.user_email,
+        user_name: userInfo.user_name,
+        user_qq_account: userInfo.user_qq_account,
+        user_wechat_account: userInfo.user_wechat_account,
+        user_sign: userInfo.user_sign,
+      };
       await queryPromise("UPDATE users SET ? WHERE user_id = ?", [
-        { ...userInfo },
+        { ...insertObj },
         user_id,
       ]);
       unifiedResponseBody({
